@@ -90,7 +90,7 @@ class GlobalSetting(object):
              "icon": "fa fa-bars",
              "menus": ({
                            "title": "WEB报告",
-                           "url": self.get_admin_url()
+                           "url": "/xadmin/test_view"
                        }, {
                            "title": "运行日志",
                            "url": ""
@@ -110,6 +110,11 @@ class LoginSetting(object):
     title = "自动化测试平台"
 
 
+
+
+
+from .views import TestView
+xadmin.site.register_view(r'test_view/$', TestView, name='for_test')
 xadmin.site.register(views.LoginView, LoginSetting)
 xadmin.site.register(views.CommAdminView, GlobalSetting)
 #
