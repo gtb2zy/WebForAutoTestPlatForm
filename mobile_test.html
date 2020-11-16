@@ -1,0 +1,277 @@
+{% extends "xadmin/base_report_site.html" %} }
+{% block content %}
+
+    <link href="//unpkg.com/element-ui@2.14.0/lib/theme-chalk/index.css" type="text/css" media="screen"
+          rel="stylesheet">
+    <script src="//unpkg.com/vue/dist/vue.js"></script>
+    <script src="//unpkg.com/element-ui@2.14.0/lib/index.js"></script>
+
+    <div id="app">
+        <template>
+            <el-input id="suite_name" v-model="suite_name" placeholder="用例集名称" max="80"></el-input>
+            <el-select id="remote_ip" v-model="remote_ip" filterable remote reserve-keyword placeholder="请输入服务器IP"
+                       :remote-method="remoteMethod"
+                       :loading="loading">
+                <el-option
+                        v-for="item in remote_ip_options"
+                        :key="item.remote_ip"
+                        :label="item.label"
+                        :value="item.remote_ip">
+                </el-option>
+            </el-select>
+
+            <el-select v-model="case_name" @change="case_name_changed" name="case_name" max="80" multiple
+                       placeholder="请选择测试用例（注意顺序）">
+                <el-option
+                        v-for="item in case_name_options"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                </el-option>
+            </el-select>
+
+            <el-select v-model="platform" @change="platform_changed" name="platform" max="80" clearable
+                       placeholder=请选择平台>
+                <el-option
+                        v-for="item in platform_options"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                </el-option>
+            </el-select>
+            <el-input id="suite_param" type="textarea" placeholder="用例集传参"
+                      :rows="2"
+                      v-model="textarea">>
+            </el-input>
+            <button id="add_suite" class="default btn btn-primary hide-xs" @click="addClick()">添加用例集
+            </button>
+
+            <el-table
+                    :data="suite_list"
+                    border
+                    style="width: 100%">
+                <el-table-column
+                        fixed
+                        prop="suite_id"
+                        label="用例集ID"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        fixed
+                        prop="remote_ip"
+                        label="远程IP"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        fixed
+                        prop="remote_port"
+                        label="远程端口"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        fixed
+                        prop="platform"
+                        label="平台"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        fixed
+                        prop="suite_name"
+                        label="用例集标题"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        fixed
+                        prop="case_name"
+                        label="用例标题"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        fixed
+                        prop="suite_param"
+                        label="用例集传参"
+                        width="150">
+                </el-table-column>
+                <el-table-column
+                        fixed
+                        prop="suite_add_time"
+                        label="用例集添加时间"
+                        width="150">
+                </el-table-column>
+
+                <el-table-column
+                        fixed="right"
+                        label="操作"
+                        width="95%">
+                    <template slot-scope="scope">
+                        <button @click="durClick(scope.row)" class="default btn btn-primary hide-xs" size="small">执行
+                        </button>
+                        <button @click="delClick(scope.row)" class="default btn btn-primary hide-xs" size="small">删除
+                        </button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </template>
+
+
+    </div>
+
+    <script>
+        var suite_list =
+        {{ suite_list |safe }}
+        var suite_tab_datas = []
+        for (var i = 0; i < suite_list.length; i++) {
+            tabdata = {
+                suite_id: suite_list[i]["suite_id"],
+                remote_ip: suite_list[i]["remote_ip"],
+                remote_port: suite_list[i]["remote_port"],
+                platform: suite_list[i]["platform"],
+                suite_name: suite_list[i]["suite_name"],
+                case_name: suite_list[i]["case_name_list"],
+                suite_param: suite_list[i]["suite_param"],
+                suite_add_time: suite_list[i]["suite_add_time"]
+            }
+            suite_tab_datas.push(tabdata)
+
+        }
+
+        var cases =
+        {{ cases_name|safe }}
+        var case_name_options = []
+        for (i = 0; i < cases.length; i++) {
+            option = {
+                value: cases[i],
+                label: cases[i]
+            }
+            case_name_options.push(option)
+        }
+
+        var case_name_list = []
+        var platform = "{{platform}}"
+
+        var Main = {
+            data() {
+                return {
+                    suite_list: suite_tab_datas,
+                    case_name_options: case_name_options,
+                    remote_ip_options: [],
+                    platform_options: [{
+                        value: "Android",
+                        label: "Android"
+                    }, {
+                        value: "iOS",
+                        label: "iOS"
+                    }],
+                    case_name: "",
+                    platform: platform,
+                    suite_name: "",
+                    textarea: "{}",
+                    remote_ip: "{{ remote_ip }}",
+                    loading: false,
+                    states: {{ remote_ip_list|safe }}
+                }
+            },
+            mounted() {
+                this.list = this.states.map(item => {
+                    return {remote_ip: `value:${item}`, label: `${item}`};
+                });
+            },
+            methods: {
+                case_name_changed() {
+                    let me = this;
+                    case_name_list = me.case_name
+
+
+                },
+                platform_changed() {
+                    let me = this;
+                    platform = me.platform
+
+                },
+                remoteMethod(query) {
+                    if (query !== '') {
+                        this.loading = true;
+                        setTimeout(() => {
+                            this.loading = false;
+                            this.remote_ip_options = this.list.filter(item => {
+                                return item.label.toLowerCase()
+                                    .indexOf(query.toLowerCase()) > -1;
+                            });
+                        }, 200);
+                    } else {
+                        this.options = [];
+                    }
+                },
+                addClick() {
+                    $("#add_suite").attr('disabled', true);
+                    var suite_name = $("#suite_name").val()
+                    var suite_param = $("#suite_param").val()
+                    var remote_ip = $("#remote_ip").val()
+                    $.ajax({
+                        type: "POST",
+                        url: '{{ 'suite_test/' }}',
+                        data: {
+                            csrfmiddlewaretoken: '{{ csrf_token }}',
+                            test_case: case_name_list.toString(),
+                            platform: platform,
+                            remote_ip: remote_ip,
+                            suite_name: suite_name,
+                            suite_param: suite_param,
+                            action: "add"
+                        },
+                        success: function callback(response) {
+                            $("#add_suite").attr('disabled', false);
+                            alert(response)
+                            location.reload()
+                        }
+                    });
+
+                },
+                durClick(row) {
+                    alert("执行中。。请等待")
+                    $.ajax({
+                        type: "POST",
+                        url: '{{ 'suite_test/' }}',
+                        data: {
+                            csrfmiddlewaretoken: '{{ csrf_token }}',
+                            suite_id: row["suite_id"],
+                            action: "exe"
+                        },
+                        success: function callback(response) {
+                            $("#Button").attr('disabled', false);
+                            alert(response)
+                            location.reload()
+                        }
+                    });
+                },
+                delClick(row) {
+                    suite_id = row["suite_id"]
+                    $.ajax({
+                        type: "POST",
+                        url: '{{ 'suite_test/' }}',
+                        data: {
+                            csrfmiddlewaretoken: '{{ csrf_token }}',
+                            suite_id: suite_id,
+                            action: "del"
+                        },
+                        success: function callback(response) {
+                            $("#Button").attr('disabled', false);
+                            alert(response)
+                            location.reload()
+                        }
+                    });
+                }
+            }
+        }
+        var Ctor = Vue.extend(Main)
+        new Ctor().$mount('#app')
+
+
+    </script>
+
+
+
+
+{% endblock %}
+
+
