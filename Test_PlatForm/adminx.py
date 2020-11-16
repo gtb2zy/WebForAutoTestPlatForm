@@ -1,41 +1,124 @@
 # from Test_Platform.models import Config, PlatForm,WebReport
+from django.contrib import admin
+from django.utils.safestring import mark_safe
+
 import xadmin
+
+from Test_Platform.models import Config, SuiteManage, CaseManage, ActionManage
 from xadmin import views
-# from Test_Platform import models
+from Test_Platform import models
+from Report_Platform.report_views import LogView, ImageView, WebReportView
+from Test_Platform.test_views import MobileTestView
+from Report_Platform.models import WebReport, Log, Image
 
 
-# class ConfigAdmin():
-#     list_display = ['config_id', 'config_name', 'config_type', 'suite_id']
-#     list_per_page = 20
-#     list_display_links = ('config_id',)
-#
-#     def dename(self, obj):
-#         if obj.deid:
-#             bbb = models.Config.objects.all().values_list('config_id', 'config_name', 'config_type', 'suite_id').get(
-#                 id=obj.config_id)[1]
-#         else:
-#             bbb = None
-#         return bbb
-#
-#     #
-#     search_fields = ['config_id']
-#
-#
-# class PlatFormAdmin():
-#     list_display = ['platform_id', 'platform_name']
-#     list_per_page = 20
-#     list_display_links = ('platform_id',)
-#     search_fields = ['platform_id', 'platform_name']
-#
-#
-# class WebReportAdmin():
-#     list_display=[]
-#     object_list_template = "http://www.baidu.com"
+class ConfigAdmin():
+    list_display = ['conf_name', 'conf_key', 'conf_value']
+    list_per_page = 20
+    list_display_links = ('conf_key',)
+
+    def dename(self, obj):
+        if obj.deid:
+            bbb = models.Config.objects.all().values_list('conf_name', 'conf_key', 'conf_value').get(
+                id=obj.conf_id)[1]
+        else:
+            bbb = None
+        return bbb
+
+    #
+    search_fields = ['conf_key']
+
+
+class CaseManageAdmin():
+    list_display = ["id", "case_name", "action_name", "case_file"]
+    list_per_page = 20
+    list_display_links = ("case_name")
+    filter_horizontal = ('action_name',)
+    style_fields = {"action_name": "m2m_transfer"}
+
+
+class ActionManageAdmin():
+    list_display = ["id", "action_name", "action_param", "action_file"]
+    list_per_page = 20
+    list_display_links = ("action_name")
+
+
+class SuiteManageAdmin(object):
+    list_display = ["suite_name", "remote_ip", "remote_port", "platform", "case_name", "suite_param", "suite_add_time",
+                    "操作"]
+    list_per_page = 20
+    list_display_links = ("suite_name")
+
+    def 操作(self, obj):
+        exebutton = '<p class="default btn btn-primary hide-xs"  onclick="exe_click_action_info(\'%s\')">执行</p>' % (
+            str(obj.id))
+        delbutton = '<p class="default btn btn-primary hide-xs"  onclick="del_click_action_info(\'%s\')">删除</p>' % (
+            str(obj.id))
+        r = mark_safe(exebutton + delbutton)
+        return r
+
+    def get_media(self):
+        media = super(SuiteManageAdmin, self).get_media() + self.vendor('xadmin.page.list.js', 'xadmin.page.form.js')
+        media += self.vendor('xadmin.list.xxxx.js', 'xadmin.jquery.cookie.min.js', 'xadmin.form.css')
+        return media
+
+
+class WebReportAdmin(object):
+    list_display = ["report_name", "report_suite_id", "report_path", "report_add_time", "操作"]
+    list_per_page = 20
+    list_display_links = ("report_name")
+
+    def 操作(self, obj):
+        button = '<p class="default btn btn-primary hide-xs"  onclick="webclick_action_info(\'%s\')">查看</p>' % (
+            str(obj.id))
+        r = mark_safe(button)
+        return r
+
+    def get_media(self):
+        media = super(WebReportAdmin, self).get_media() + self.vendor('xadmin.page.list.js', 'xadmin.page.form.js')
+        media += self.vendor('xadmin.list.xxxx.js', 'xadmin.jquery.cookie.min.js', 'xadmin.form.css')
+        return media
+
+
+class LogAdmin(object):
+    list_display = ["log_name", "log_path", "log_add_time", "操作"]
+    list_per_page = 20
+    list_display_links = ("log_name")
+
+    def 操作(self, obj):
+        button = '<p class="default btn btn-primary hide-xs"  onclick="logclick_action_info(\'%s\')">查看</p>' % (
+            str(obj.log_path))
+        r = mark_safe(button)
+        return r
+
+    def get_media(self):
+        media = super(LogAdmin, self).get_media() + self.vendor('xadmin.page.list.js', 'xadmin.page.form.js')
+        media += self.vendor('xadmin.list.xxxx.js', 'xadmin.jquery.cookie.min.js', 'xadmin.form.css')
+        return media
+
+
+class ImageAdmin(object):
+    list_display = ["image_name", "image_suite_id", "image_path", "image_add_time", "操作"]
+    list_per_page = 20
+    list_display_links = ("image_name")
+
+    def 操作(self, obj):
+        button = '<p class="default btn btn-primary hide-xs"  onclick="imageclick_action_info(\'%s\')">查看</p>' % (
+            str(obj.image_path))
+        r = mark_safe(button)
+        return r
+
+    def get_media(self):
+        media = super(ImageAdmin, self).get_media() + self.vendor('xadmin.page.list.js', 'xadmin.page.form.js')
+        media += self.vendor('xadmin.list.xxxx.js', 'xadmin.jquery.cookie.min.js', 'xadmin.form.css')
+        return media
+
 
 class GlobalSetting(object):
     site_title = "自动化测试平台"
     site_footer = "陈治许"
-    menu_style = "accordion"  # 菜单折叠
+
+    # menu_style = "accordion"  # 菜单折叠
 
     def get_site_menu(self):
         return [
@@ -46,61 +129,11 @@ class GlobalSetting(object):
                     {
                         'title': '移动端UI测试',
 
-                        'url': ""
+                        'url': "/xadmin/mobile_test_view"
                         # 自定义跳转列表
                     },
-                    {
-                        'title': 'WEB端UI测试',
-
-                        'url': ""
-                        # 自定义跳转列表
-                    },
-                    {
-                        'title': 'API接口测试',
-
-                        'url': ""
-                        # 自定义跳转列表
-                    },
-                    {
-                        'title': 'PC(WIN)UI测试',
-
-                        'url': ""
-                        # 自定义跳转列表
-                    },
-
                 )
-            },
-            {
-                'title': '配置管理中心',
-                'icon': 'fa fa-cog',  # Font Awesome图标
-                'menus': (
-                    {
-                        'title': '全局配置',
-                        'icon': 'fa fa-cog',
-                        'url': ""
-                    },
-                    {
-                        'title': '局部配置',
-                        'icon': 'fa fa-cog',
-                        'url': "",
-                    }
-                )
-            },
-            {"title": "报告管理平台",
-             "icon": "fa fa-bars",
-             "menus": ({
-                           "title": "WEB报告",
-                           "url": "/xadmin/test_view"
-                       }, {
-                           "title": "运行日志",
-                           "url": ""
-                       },
-                       {
-                           "title": "错误截图",
-                           "url": ""
-                       }
-             )
-             }
+            }
 
         ]
 
@@ -109,11 +142,18 @@ class LoginSetting(object):
     title = "自动化测试平台"
 
 
-from .views import TestView
+xadmin.site.register_view(r'web_report_view', WebReportView, name='web_report')
+xadmin.site.register_view(r'log_view', LogView, name='log')
+xadmin.site.register_view(r'image_view', ImageView, name='image')
+xadmin.site.register_view(r'mobile_test_view/$', MobileTestView, name='mobile_test')
 
-xadmin.site.register_view(r'test_view/$', TestView, name='for_test')
 xadmin.site.register(views.LoginView, LoginSetting)
 xadmin.site.register(views.CommAdminView, GlobalSetting)
-#
-# xadmin.site.register(Config, ConfigAdmin)
-# xadmin.site.register(PlatForm, PlatFormAdmin)
+
+xadmin.site.register(Config, ConfigAdmin)
+xadmin.site.register(SuiteManage, SuiteManageAdmin)
+xadmin.site.register(CaseManage, CaseManageAdmin)
+xadmin.site.register(ActionManage, ActionManageAdmin)
+xadmin.site.register(WebReport, WebReportAdmin)
+xadmin.site.register(Log, LogAdmin)
+xadmin.site.register(Image, ImageAdmin)
